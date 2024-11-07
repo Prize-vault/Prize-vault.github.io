@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Visit Task Completion</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <style>
+        /* Background styling */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #6a11cb, #2575fc);
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Main container */
+        .main-container {
+            text-align: center;
+            padding: 20px;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        /* Title styling */
+        h1 {
+            font-size: 2.5em;
+            color: #ffffff;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        /* Paragraph instruction styling */
+        p {
+            font-size: 1.1em;
+            color: #e0e0e0;
+            margin-bottom: 20px;
+        }
+
+        /* Task container styling for vertical alignment */
+        .task-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        /* Task button styling */
+        .task-button {
+            background-image: linear-gradient(to right, #ff512f, #dd2476);
+            color: #ffffff;
+            font-size: 1.1em;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            margin: 10px 0;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+            transition: background 0.3s, transform 0.2s;
+        }
+
+        .task-button:disabled {
+            background: #bbb;
+            cursor: not-allowed;
+        }
+
+        /* Confirmation button styling */
+        #confirmButton {
+            display: none;
+            background-image: linear-gradient(to right, #00b09b, #96c93d);
+            color: #ffffff;
+            font-size: 1.2em;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            margin-top: 20px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+            transition: background 0.3s, transform 0.2s;
+        }
+
+        /* Status message styling */
+        #status {
+            font-size: 1.1em;
+            color: #eeeeee;
+            margin-top: 20px;
+        }
+
+        /* Form styling */
+        .form-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            background: transparent;
+            padding: 20px;
+            border-radius: 15px;
+            width: 100%;
+            max-width: 400px;
+            transition: transform 0.3s ease;
+        }
+
+        .form-container input {
+            font-size: 1.1em;
+            margin: 15px 0;
+            padding: 12px;
+            width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            color: #333;
+            background: #ffffff;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+            transition: border 0.3s;
+        }
+
+        .form-container input:focus {
+            border-color: #2575fc;
+            outline: none;
+        }
+
+        .form-container button {
+            background-image: linear-gradient(to right, #6a11cb, #2575fc);
+            color: white;
+            border: none;
+            font-size: 1.1em;
+            font-weight: bold;
+            padding: 12px;
+            width: 100%;
+            border-radius: 25px;
+            cursor: pointer;
+            margin-top: 15px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+            transition: background 0.3s, transform 0.2s;
+        }
+
+        .form-container button:hover {
+            transform: scale(1.02);
+        }
+    </style>
+</head>
+<body>
+
+<div class="main-container">
+    <h1>Complete Your Web Visit Tasks</h1>
+    <p>Click each button below to open a task. Please wait a random amount of time on each page, then return here to proceed.</p>
+
+    <div class="task-container">
+        <button class="task-button" onclick="startTask(0)" id="task1">Start Task 1</button>
+        <button class="task-button" onclick="startTask(1)" id="task2">Start Task 2</button>
+        <button class="task-button" onclick="startTask(2)" id="task3">Start Task 3</button>
+    </div>
+
+    <p id="status">Ready to begin the tasks.</p>
+    <button id="confirmButton" onclick="showForm()">Confirm All Tasks Completed</button>
+
+    <div class="form-container" id="formContainer">
+        <input type="text" id="uniqueKey" placeholder="Enter Unique Key" required>
+        <input type="text" id="upiId" placeholder="Enter UPI ID" required>
+        <button onclick="submitData()">Submit</button>
+    </div>
+</div>
+
+<script>
+    // Firebase configuration
+    const firebaseConfig = {
+        apiKey: "AIzaSyC9dzy8PqM0rsLG-rp9I4cqFO-QFYh-vCk",
+        authDomain: "tic-tac-toe-336ec.firebaseapp.com",
+        databaseURL: "https://tic-tac-toe-336ec-default-rtdb.firebaseio.com",
+        projectId: "tic-tac-toe-336ec",
+        storageBucket: "tic-tac-toe-336ec.appspot.com",
+        messagingSenderId: "33219490437",
+        appId: "1:33219490437:web:a61488c7c692551d5c6fec",
+        measurementId: "G-V9KDPT36GN"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    // Task handling
+    const urls = [
+        "https://chikraighotoops.com/4/8466975",
+        "https://chikraighotoops.com/4/8467122",
+        "https://chikraighotoops.com/4/8467123"
+    ];
+    let completedTasks = [false, false, false];
+
+    function startTask(index) {
+        if (completedTasks[index]) {
+            alert("Task " + (index + 1) + " has already been completed.");
+            return;
+        }
+
+        const delay = Math.floor(Math.random() * 11 + 10) * 1000;
+        window.open(urls[index], "_blank");
+        document.getElementById(`task${index + 1}`).disabled = true;
+
+        setTimeout(() => {
+            completedTasks[index] = true;
+            document.getElementById("status").innerText = `Task ${index + 1} completed!`;
+            checkAllTasksCompleted();
+        }, delay);
+    }
+
+    function checkAllTasksCompleted() {
+        if (completedTasks.every(task => task)) {
+            document.getElementById("status").innerText = "All tasks completed!";
+            document.getElementById("confirmButton").style.display = "inline-block";
+        }
+    }
+
+    function showForm() {
+        document.querySelector(".task-container").style.display = "none";
+        document.getElementById("confirmButton").style.display = "none";
+        document.getElementById("status").style.display = "none";
+        document.getElementById("formContainer").style.display = "flex";
+    }
+
+    // Submit data to Firebase
+    function submitData() {
+        const uniqueKey = document.getElementById("uniqueKey").value.trim();
+        const upiId = document.getElementById("upiId").value.trim();
+
+        if (!uniqueKey || !upiId) {
+            alert("Please enter both the unique key and UPI ID.");
+            return;
+        }
+
+        const keyRef = database.ref(uniqueKey);
+        keyRef.once("value", (snapshot) => {
+            if (snapshot.exists()) {
+                keyRef.push({ upiId: upiId });
+                alert("UPI ID submitted successfully.");
+                location.reload();  // Refresh the page after successful submission
+            } else {
+                alert("Invalid unique key. Please try again.");
+            }
+        });
+    }
+</script>
+
+</body>
+</html>
