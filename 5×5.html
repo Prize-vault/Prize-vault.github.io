@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>5×5 Number Puzzle</title>
+    <link href="https://fonts.googleapis.com/css2?family=Alice&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #0040ff, #c4007b);
+            font-family: 'Alice', serif;
+            color: white;
+            position: relative;
+        }
+
+        h1 {
+            position: absolute;
+            top: 5%;
+            font-size: 2.5rem;
+            text-align: center;
+        }
+
+        .puzzle-container {
+            display: grid;
+            grid-template-columns: repeat(5, 70px);
+            grid-gap: 8px;
+            margin-bottom: 50px;
+        }
+
+        .tile {
+            background-color: #a7098e;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 10px;
+            cursor: pointer;
+            height: 70px;
+            width: 70px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s;
+        }
+
+        .tile:hover {
+            transform: scale(1.05);
+        }
+
+        .empty {
+            background-color: transparent;
+            cursor: default;
+            box-shadow: none;
+        }
+
+        .signature {
+            position: absolute;
+            bottom: 150px;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        /* Winning Message Styles */
+        .winning-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            color: #333;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
+            width: 80%;
+            max-width: 400px;
+            padding: 20px;
+            display: none;
+        }
+
+        .winning-message h2 {
+            font-size: 1.8rem;
+            color: #a7098e;
+        }
+
+        .winning-message p {
+            font-size: 1.2rem;
+            margin: 10px 0;
+        }
+
+        .winning-message button {
+            background-color: #a7098e;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            margin: 10px;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s;
+        }
+
+        .winning-message button:hover {
+            transform: scale(1.05);
+            background-color: #8c0074;
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            color: #a7098e;
+            font-size: 20px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+        }
+
+        .close-btn:hover {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>5×5 Number Puzzle</h1>
+    <div class="puzzle-container" id="puzzle-container"></div>
+    <div class="signature">@pH Developer</div>
+
+    <!-- Winning Message -->
+    <div class="winning-message" id="winning-message">
+        <button class="close-btn" id="close-btn">×</button>
+        <h2>Congratulations!</h2>
+        <p>You have successfully completed the puzzle!</p>
+        <button id="restart-btn">Restart</button>
+        <button id="exit-btn">Exit</button>
+    </div>
+
+    <script>
+        // Initialize the tiles
+        const tiles = [...Array(24).keys()].map(i => i + 1); // Numbers 1-24
+        tiles.push(null); // Add an empty slot
+
+        // Shuffle the tiles
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+        shuffle(tiles);
+
+        // Render the puzzle grid
+        const puzzleContainer = document.getElementById('puzzle-container');
+        const winningMessage = document.getElementById('winning-message');
+        const restartBtn = document.getElementById('restart-btn');
+        const exitBtn = document.getElementById('exit-btn');
+        const closeBtn = document.getElementById('close-btn');
+
+        tiles.forEach((tile, index) => {
+            const tileElement = document.createElement('div');
+            tileElement.className = 'tile';
+            if (tile === null) {
+                tileElement.classList.add('empty');
+            } else {
+                tileElement.textContent = tile;
+            }
+            tileElement.dataset.index = index;
+            puzzleContainer.appendChild(tileElement);
+        });
+
+        // Move tile logic
+        function moveTile(index) {
+            const emptyIndex = tiles.indexOf(null);
+            const validMoves = [
+                emptyIndex - 5, // Up
+                emptyIndex + 5, // Down
+                emptyIndex - 1, // Left
+                emptyIndex + 1  // Right
+            ];
+            if (validMoves.includes(index)) {
+                [tiles[emptyIndex], tiles[index]] = [tiles[index], tiles[emptyIndex]];
+                renderPuzzle();
+                checkWin();
+            }
+        }
+
+        // Check if the user has won
+        function checkWin() {
+            const isWin = tiles.slice(0, -1).every((tile, index) => tile === index + 1);
+            if (isWin) {
+                showWinningMessage();
+            }
+        }
+
+        // Show the winning message
+        function showWinningMessage() {
+            winningMessage.style.display = 'block';
+        }
+
+        // Render the puzzle after each move
+        function renderPuzzle() {
+            puzzleContainer.innerHTML = '';
+            tiles.forEach((tile, index) => {
+                const tileElement = document.createElement('div');
+                tileElement.className = 'tile';
+                if (tile === null) {
+                    tileElement.classList.add('empty');
+                } else {
+                    tileElement.textContent = tile;
+                }
+                tileElement.dataset.index = index;
+                tileElement.addEventListener('click', () => moveTile(index));
+                puzzleContainer.appendChild(tileElement);
+            });
+        }
+
+        // Restart the game
+        restartBtn.addEventListener('click', () => {
+            shuffle(tiles);
+            renderPuzzle();
+            winningMessage.style.display = 'none';
+        });
+
+        // Exit the game
+        exitBtn.addEventListener('click', () => {
+            window.close(); // May not work in some browsers
+        });
+
+        // Close the winning message
+        closeBtn.addEventListener('click', () => {
+            winningMessage.style.display = 'none';
+        });
+
+        // Initial render
+        renderPuzzle();
+    </script>
+</body>
+</html>
